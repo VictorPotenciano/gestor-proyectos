@@ -1,0 +1,239 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String           @id @default(cuid())
+  name               String
+  email              String           @unique
+  password           String
+  role               Role             @default(USER)
+  ownedProjects      Project[]        @relation("ProjectOwner")
+  projectMemberships ProjectMember[]
+  assignedTasks      TaskAssignment[]
+  comments           Note[]
+  createdActivities  ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model Project {
+  id            String          @id @default(cuid())
+  name          String
+  description   String?         @db.Text
+  status        ProjectStatus   @default(EN_PROCESO)
+  totalAmount   Decimal         @db.Decimal(10, 2) // Cantidad total en euros
+  paidAmount    Decimal         @default(0) @db.Decimal(10, 2) // Cantidad pagada hasta ahora
+  paymentStatus PaymentStatus   @default(NO_PAGADO)
+  startDate     DateTime?
+  dueDate       DateTime?
+  completedAt   DateTime?
+  ownerId       String
+  owner         User            @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  customerId    String?
+  customer      Customer?       @relation(fields: [customerId], references: [id])
+  members       ProjectMember[]
+  tasks         Task[]
+  comments      Note[]
+  payments      Payment[]
+  activities    ActivityLog[]
+  isDeleted     Boolean         @default(false)
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+enum ProjectStatus {
+  EN_PROCESO
+  COMPLETADO
+  CANCELADO
+  PAUSADO
+}
+
+enum PaymentStatus {
+  NO_PAGADO
+  A_PLAZOS
+  PAGADO
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invitedAt DateTime @default(now())
+  joinedAt  DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+model Task {
+  id          String           @id @default(cuid())
+  title       String
+  description String?          @db.Text
+  status      TaskStatus       @default(PENDIENTE)
+  priority    TaskPriority     @default(MEDIA)
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignees   TaskAssignment[]
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([priority])
+}
+
+model TaskAssignment {
+  id     String @id @default(cuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+enum TaskStatus {
+  PENDIENTE
+  EN_PROGRESO
+  EN_REVISION
+  COMPLETADA
+  CANCELADA
+}
+
+enum TaskPriority {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?  @db.Text
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  paymentDate DateTime @default(now())
+  reference   String? // Número de factura, referencia de transferencia, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([paymentDate])
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  type      ActivityType
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metadata  Json?
+  isDeleted Boolean      @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum ActivityType {
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_COMPLETE
+  PROJECT_REMOVED
+  PROJECT_CANCEL
+  PROJECT_PAUSE
+  PROJECT_IN_PROGRESS
+  PAYMENT_STATUS_NOT_PAID
+  PAYMENT_STATUS_PAID
+  PAYMENT_STATUS_IN_INSTALLMENTS
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_COMPLETED
+  TASK_REMOVED
+  TASK_STATUS_PENDING
+  TASK_STATUS_IN_PROGRESS
+  TASK_STATUS_REVIEW
+  TASK_STATUS_COMPLETED
+  TASK_STATUS_CANCEL
+  TASK_PRIORITY_LOW
+  TASK_PRIORITY_MEDIUM
+  TASK_PRIORITY_HIGH
+  TASK_PRIORITY_URGENT
+  COMMENT_ADDED
+  COMMENT_UPDATED
+  COMMENT_REMOVED
+  PAYMENT_ADDED
+  PAYMENT_UPDATED
+  PAYMENT_REMOVED
+}

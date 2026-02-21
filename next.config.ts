@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["@prisma/client", "bcryptjs"],
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/proyectos",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
