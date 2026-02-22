@@ -314,7 +314,8 @@ const TabTaskTable = ({
                       </span>
                     </div>
                   </TableCell>
-                  {task.assignees?.some((a) => a.user.id === user?.id) && (
+                  {(task.assignees?.some((a) => a.user.id === user?.id) ||
+                    project.ownerId === user?.id) && (
                     <TableCell className="pr-6">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

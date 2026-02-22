@@ -138,6 +138,7 @@ const ProjectDetailTabsMembers = ({
         onClose={() => setDialogOpen(false)}
         users={users}
         loadProject={() => loadProject(activitiesPage, tasksPage, commentsPage)}
+        currentMemberIds={project.members?.map((m) => m.user.id) ?? []}
         error={error}
         setError={setError}
         activitiesPage={activitiesPage}

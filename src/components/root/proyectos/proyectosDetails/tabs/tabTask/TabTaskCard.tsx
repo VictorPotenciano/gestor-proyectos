@@ -150,9 +150,6 @@ const TabTaskCard = ({
           const isCompleted = task?.status === "COMPLETADA";
           const isCancel = task?.status === "CANCELADA";
           const isSelected = selectedTask?.id === task.id;
-          const isAssignee = task.assignees?.some(
-            (a) => a.user.id === user?.id
-          );
 
           return (
             <div
@@ -194,7 +191,8 @@ const TabTaskCard = ({
                   {task.title}
                 </span>
 
-                {isAssignee && (
+                {(task.assignees?.some((a) => a.user.id === user?.id) ||
+                    project.ownerId === user?.id) && (
                   <div
                     onClick={(e) => e.stopPropagation()}
                     className="shrink-0"

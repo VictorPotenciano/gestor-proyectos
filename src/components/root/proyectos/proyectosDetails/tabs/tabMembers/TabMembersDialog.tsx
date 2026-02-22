@@ -60,6 +60,7 @@ interface TabMembersDialogProps {
     cmtPage: number,
     showLoader?: boolean
   ) => void;
+  currentMemberIds?: string[];
   error: string | null;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   activitiesPage: number;
@@ -73,6 +74,7 @@ const TabMembersDialog = ({
   onClose,
   users,
   loadProject,
+  currentMemberIds,
   error,
   setError,
   activitiesPage,
@@ -142,9 +144,11 @@ const TabMembersDialog = ({
     onClose();
   };
 
-  // Filtrar usuarios excluyendo el usuario actual
-  const availableUsers = users.filter((user) => user.id !== userSession?.id);
-
+  // Filtrar usuarios excluyendo el usuario y los miembros que ya estan
+  const availableUsers = users.filter(
+    (user) =>
+      user.id !== userSession?.id && !currentMemberIds?.includes(user.id)
+  );
   return (
     <Dialog open={open} onOpenChange={handleCancel}>
       <DialogContent className="sm:max-w-125 bg-white border border-blue-600">
