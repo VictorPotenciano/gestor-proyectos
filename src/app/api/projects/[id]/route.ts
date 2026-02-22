@@ -109,6 +109,7 @@ export async function GET(
                 email: true,
               },
             },
+            attachments: true,
           },
           take: commentsLimit,
           skip: commentsSkip,

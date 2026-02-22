@@ -124,6 +124,7 @@ export interface Task {
   assignees?: TaskAssignment[];
   dueDate?: Date | null;
   completedAt?: Date | null;
+
   createdAt: Date;
 }
 
@@ -156,7 +157,28 @@ export interface Note {
   project: Project;
   authorId: string;
   author: User;
+  attachments?: NoteAttachment[];
   createdAt: Date;
+}
+
+export interface NoteAttachment {
+  id: string;
+  url: string;
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface CreateNoteParams {
+  content: string;
+  projectId: string;
+  files?: File[];
+}
+
+export interface UpdateNoteParams {
+  content: string;
+  keepAttachmentIds?: string[];
+  files?: File[];
 }
 
 export interface Payment {

@@ -61,7 +61,7 @@ const ProjectDetailTabsPayment = ({
             <Button
               onClick={() => setDialogOpen(true)}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap shrink-0 w-full sm:w-auto"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap shrink-0 w-full sm:w-auto cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               Registrar Pago

@@ -148,7 +148,7 @@ const ProjectDetailTabsTask = ({
               <Button
                 onClick={() => setDialogFormOpen(true)}
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap shrink-0 w-full sm:w-auto"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap shrink-0 w-full sm:w-auto cursor-pointer"
               >
                 <Plus className="h-4 w-4 mr-2 shrink-0" />
                 Nueva Tarea

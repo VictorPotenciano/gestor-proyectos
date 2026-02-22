@@ -44,8 +44,16 @@ const ProjectDetailTabsMembers = ({
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const data = await getUsers();
-        setUsers(data);
+        let allUsersData: User[] = [];
+        let currentPage = 1;
+        let hasMorePages = true;
+        while (hasMorePages) {
+          const response = await getUsers(currentPage);
+          allUsersData = [...allUsersData, ...response.data];
+          hasMorePages = currentPage < response.pagination.totalPages;
+          currentPage++;
+        }
+        setUsers(allUsersData);
       } catch {
         setError("Error cargando datos necesarios");
       }
@@ -110,7 +118,7 @@ const ProjectDetailTabsMembers = ({
               <Button
                 onClick={() => setDialogOpen(true)}
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap shrink-0 w-full sm:w-auto"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap shrink-0 w-full sm:w-auto cursor-pointer"
               >
                 <Plus className="h-4 w-4 mr-2 shrink-0" />
                 Invitar Miembro

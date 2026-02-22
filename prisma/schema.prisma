@@ -154,12 +154,13 @@ enum TaskPriority {
 }
 
 model Note {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
-  projectId String?
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  content     String           @db.Text
+  projectId   String?
+  project     Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  attachments NoteAttachment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -167,6 +168,21 @@ model Note {
   @@index([projectId])
   @@index([authorId])
   @@index([createdAt])
+}
+
+model NoteAttachment {
+  id           String @id @default(cuid())
+  noteId       String
+  note         Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  url          String
+  blobPathname String
+  name         String
+  size         Int
+  contentType  String
+
+  createdAt DateTime @default(now())
+
+  @@index([noteId])
 }
 
 model Payment {

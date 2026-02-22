@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { put, del } from "@vercel/blob";
 
 export async function PUT(
   request: Request,
@@ -13,6 +14,7 @@ export async function PUT(
       where: {
         id,
       },
+      include: { attachments: true },
     });
 
     if (!existingNote) {
@@ -21,7 +23,42 @@ export async function PUT(
         { status: 404 }
       );
     }
-    const { content } = await request.json();
+    const formData = await request.formData();
+    const content = formData.get("content") as string;
+
+    // IDs de adjuntos que el cliente quiere conservar
+    const keepAttachmentIds = formData.getAll("keepAttachmentIds") as string[];
+
+    // Nuevos ficheros a subir
+    const newFiles = formData.getAll("files") as File[];
+
+    // 1. Determinar qué adjuntos se eliminaron
+    const attachmentsToDelete = existingNote.attachments.filter(
+      (att) => !keepAttachmentIds.includes(att.id)
+    );
+
+    // 2. Borrar de Vercel Blob los adjuntos eliminados
+    if (attachmentsToDelete.length > 0) {
+      await Promise.all(attachmentsToDelete.map((att) => del(att.url)));
+    }
+
+    // 3. Subir nuevos ficheros a Vercel Blob
+    const newAttachments = await Promise.all(
+      newFiles.map(async (file) => {
+        const blob = await put(
+          `notes/${existingNote.projectId}/${Date.now()}-${file.name}`,
+          file,
+          { access: "public" }
+        );
+        return {
+          url: blob.url,
+          blobPathname: blob.pathname,
+          name: file.name,
+          size: file.size,
+          contentType: file.type,
+        };
+      })
+    );
 
     const updatedNote = await prisma.note.update({
       where: {
@@ -29,6 +66,10 @@ export async function PUT(
       },
       data: {
         content,
+        attachments: {
+          delete: attachmentsToDelete.map((att) => ({ id: att.id })),
+          create: newAttachments,
+        },
       },
       include: {
         project: {
@@ -43,6 +84,7 @@ export async function PUT(
             email: true,
           },
         },
+        attachments: true,
       },
     });
     await prisma.activityLog.create({
@@ -105,6 +147,7 @@ export async function DELETE(
             name: true,
           },
         },
+        attachments: true,
       },
     });
 
@@ -120,6 +163,13 @@ export async function DELETE(
       return NextResponse.json(
         { message: "No tienes permisos para eliminar esta nota" },
         { status: 403 }
+      );
+    }
+
+      // Borrar adjuntos de Vercel Blob antes de eliminar la nota
+    if (existingNote.attachments.length > 0) {
+      await Promise.all(
+        existingNote.attachments.map((att) => del(att.url))
       );
     }
 
